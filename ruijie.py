@@ -1,4 +1,4 @@
-Import requests
+import requests
 import re
 import urllib3
 import time
@@ -9,14 +9,15 @@ import os
 import sys
 from urllib.parse import urlparse, parse_qs, urljoin
 
+# SSL warnings တွေကို ပိတ်ထားခြင်း
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ===============================
 # CONFIG (OPTIMIZED FOR SPEED & LOW PING)
 # ===============================
-PING_THREADS = 10        # Thread ကို ၁၀ ထိတိုးထားတယ် (Speed ပိုတက်စေဖို့)
-MIN_INTERVAL = 0.001     # တုံ့ပြန်မှုမြန်အောင် Interval ကို အနိမ့်ဆုံးချထားတယ်
-MAX_INTERVAL = 0.01      # Delay ကို အနည်းဆုံးဖြစ်အောင် ပြင်ထားတယ်
+PING_THREADS = 10        
+MIN_INTERVAL = 0.001     
+MAX_INTERVAL = 0.01      
 DEBUG = False
 
 # ===============================
@@ -99,7 +100,6 @@ def banner():
 {RESET}""")
 
 def high_speed_ping(auth_link, sid):
-    # Performance ပိုကောင်းအောင် Session object ကို ခွဲသုံးထားပါတယ်
     session = requests.Session()
     session.verify = False
     adapter = requests.adapters.HTTPAdapter(pool_connections=PING_THREADS, pool_maxsize=PING_THREADS)
@@ -108,7 +108,6 @@ def high_speed_ping(auth_link, sid):
     while not stop_event.is_set():
         try:
             session.get(auth_link, timeout=3)
-            # screen output ကလည်း latency ဖြစ်စေလို့ ရှင်းအောင် ထားပေးထားပါတယ်
             sys.stdout.write(f"\r{B_GREEN}[✓] BYPASS STABLE | TURBO ACTIVE >>> [{random.randint(20,60)}ms]{RESET}")
             sys.stdout.flush()
         except:
