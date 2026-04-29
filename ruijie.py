@@ -1,4 +1,4 @@
-import requests
+Import requests
 import re
 import urllib3
 import time
@@ -7,20 +7,24 @@ import logging
 import random
 import os
 import sys
-import subprocess
-from datetime import datetime
 from urllib.parse import urlparse, parse_qs, urljoin
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ===============================
-# CONFIG (FIREBASE & PERFORMANCE)
+# CONFIG (OPTIMIZED FOR SPEED & LOW PING)
 # ===============================
-# Firebase URL စနစ်တကျ ပြင်ဆင်ထားသည်
-BASE_URL = "https://skyblue-bypass-default-rtdb.firebaseio.com/Keys"
-PING_THREADS = 10        
-MIN_INTERVAL = 0.001     
-MAX_INTERVAL = 0.01      
+PING_THREADS = 10        # Thread ကို ၁၀ ထိတိုးထားတယ် (Speed ပိုတက်စေဖို့)
+MIN_INTERVAL = 0.001     # တုံ့ပြန်မှုမြန်အောင် Interval ကို အနိမ့်ဆုံးချထားတယ်
+MAX_INTERVAL = 0.01      # Delay ကို အနည်းဆုံးဖြစ်အောင် ပြင်ထားတယ်
+DEBUG = False
+
+# ===============================
+# KEY SYSTEM CONFIG
+# ===============================
+SHEET_ID = "1MKfd87jf2GB9rE1QWTU0BCTno9l3my2ewdfpUEMM9hI"
+SHEET_CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=0"
+LOCAL_KEYS_FILE = os.path.expanduser("~/.ruijie_approved_keys.txt")
 
 # ===============================
 # COLOR SYSTEM
@@ -32,74 +36,54 @@ B_GREEN = "\033[1;32m"; B_CYAN = "\033[1;36m"; B_RED = "\033[1;31m"
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(message)s", datefmt="%H:%M:%S")
 stop_event = threading.Event()
 
-# ===============================
-# KEY SYSTEM (FIREBASE INTEGRATED)
-# ===============================
-def get_hwid():
+def get_system_key():
+    try: uid = os.geteuid()
+    except: uid = 1000
+    try: username = os.getlogin()
+    except: username = os.environ.get('USER', 'unknown')
+    return f"{uid}{username}"
+
+def fetch_authorized_keys():
+    keys = []
     try:
-        cmd = subprocess.check_output("settings get secure android_id", shell=True)
-        return cmd.decode().strip()
-    except:
-        return "unknown_device"
+        response = requests.get(SHEET_CSV_URL, timeout=10)
+        if response.status_code == 200:
+            for line in response.text.strip().split('\n'):
+                line = line.strip()
+                if line and not any(x in line.lower() for x in ['key', 'username']):
+                    key = line.split(',')[0].strip().strip('"')
+                    if key: keys.append(key)
+            if keys:
+                try:
+                    with open(LOCAL_KEYS_FILE, 'w') as f: f.write('\n'.join(keys))
+                except: pass
+            return keys
+    except: pass
+    try:
+        if os.path.exists(LOCAL_KEYS_FILE):
+            with open(LOCAL_KEYS_FILE, 'r') as f:
+                keys = [line.strip() for line in f if line.strip()]
+    except: pass
+    return keys
 
 def check_approval():
     os.system('clear')
     print(f"{B_CYAN}╔══════════════════════════════════════════════════════════════════╗")
     print(f"║                ULTRA SPEED BYPASS SYSTEM                         ║")
-    print(f"║                     ADMIN: @KENOBE21                             ║")
     print(f"╚══════════════════════════════════════════════════════════════════╝{RESET}")
-    
-    current_hwid = get_hwid()
-    user_key = input(f"\n{YELLOW}[?] Enter Your License Key: {RESET}")
-    
-    print(f"{B_CYAN}[!] Verifying with SkyBlue Cloud Database...{RESET}")
-    
-    try:
-        response = requests.get(f"{BASE_URL}/{user_key}.json")
-        data = response.json()
-
-        if data:
-            # ရက်စွဲနှင့် အချိန်ပုံစံ နှစ်မျိုးလုံးကို ဖတ်နိုင်ရန် ပြင်ဆင်ထားသည်
-            expiry_str = data.get('expiry_date', "")
-            try:
-                # အချိန်ပါသော ပုံစံ (2026-04-29 12:59:59) အတွက်
-                expiry_date = datetime.strptime(expiry_str, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                # ရက်စွဲသာပါသော ပုံစံ (2026-12-31) အတွက်
-                expiry_date = datetime.strptime(expiry_str, "%Y-%m-%d")
-
-            status = data.get('status', 'inactive')
-            saved_hwid = data.get('device_id', "")
-
-            # ၁။ သက်တမ်းစစ်ခြင်း
-            if status != "active" or expiry_date < datetime.now():
-                print(f"\n{B_RED}[❌] KEY EXPIRED OR DEACTIVATED!{RESET}")
-                return False
-
-            # ၂။ Device Binding စစ်ခြင်း
-            if saved_hwid == "" or saved_hwid == None:
-                requests.patch(f"{BASE_URL}/{user_key}.json", json={"device_id": current_hwid})
-                print(f"\n{B_GREEN}[✓] NEW DEVICE REGISTERED SUCCESSFULLY!{RESET}")
-            elif saved_hwid != current_hwid:
-                print(f"\n{B_RED}[❌] ACCESS DENIED! KEY LOCKED TO ANOTHER DEVICE.{RESET}")
-                print(f"{YELLOW}[!] Contact Admin @Kenobe21 to reset HWID.{RESET}")
-                return False
-            
-            print(f"\n{B_GREEN}[✓] ACCESS GRANTED! WELCOME {user_key.upper()}.{RESET}")
-            time.sleep(1.5)
-            return True
-        else:
-            print(f"\n{B_RED}[❌] INVALID LICENSE KEY!{RESET}")
-            print(f"{YELLOW}[!] Contact Admin: @Kenobe21{RESET}")
-            print(f"{YELLOW}[!] Your HWID: {RESET}{CYAN}{current_hwid}{RESET}")
-            return False
-    except Exception as e:
-        print(f"\n{B_RED}[!] DATABASE ERROR: {e}{RESET}")
+    print(f"\n{B_CYAN}[!] Checking approval status...{RESET}")
+    system_key = get_system_key()
+    authorized_keys = fetch_authorized_keys()
+    if system_key in authorized_keys:
+        print(f"\n{B_GREEN}   [✓] KEY APPROVED! TURBO MODE ENABLED.{RESET}")
+        time.sleep(1)
+        return True
+    else:
+        print(f"\n{B_RED}   [❌] KEY NOT APPROVED{RESET}")
+        print(f"   {YELLOW}Contact Admin: {RESET}@Kenobe21")
+        print(f"   {YELLOW}Your Key: {RESET}{CYAN}{system_key}{RESET}")
         return False
 
-# ===============================
-# BYPASS ENGINE
-# ===============================
 def check_real_internet():
     try:
         return requests.get("http://www.google.com", timeout=2).status_code == 200
@@ -107,16 +91,15 @@ def check_real_internet():
         return False
 
 def banner():
-    os.system('clear')
     print(f"""{MAGENTA}
 ╔══════════════════════════════════════╗
 ║     RUIJIE TURBO BYPASS (PRO)        ║
 ║     Optimized for Low Latency        ║
-║     Powered by SkyBlue Database      ║
 ╚══════════════════════════════════════╝
 {RESET}""")
 
-def high_speed_ping(auth_link):
+def high_speed_ping(auth_link, sid):
+    # Performance ပိုကောင်းအောင် Session object ကို ခွဲသုံးထားပါတယ်
     session = requests.Session()
     session.verify = False
     adapter = requests.adapters.HTTPAdapter(pool_connections=PING_THREADS, pool_maxsize=PING_THREADS)
@@ -125,6 +108,7 @@ def high_speed_ping(auth_link):
     while not stop_event.is_set():
         try:
             session.get(auth_link, timeout=3)
+            # screen output ကလည်း latency ဖြစ်စေလို့ ရှင်းအောင် ထားပေးထားပါတယ်
             sys.stdout.write(f"\r{B_GREEN}[✓] BYPASS STABLE | TURBO ACTIVE >>> [{random.randint(20,60)}ms]{RESET}")
             sys.stdout.flush()
         except:
@@ -147,7 +131,8 @@ def start_process():
 
             portal_url = r.url
             parsed_portal = urlparse(portal_url)
-            
+            portal_host = f"{parsed_portal.scheme}://{parsed_portal.netloc}"
+
             r1 = session.get(portal_url, verify=False, timeout=10)
             path_match = re.search(r"location\.href\s*=\s*['\"]([^'\"]+)['\"]", r1.text)
             next_url = urljoin(portal_url, path_match.group(1)) if path_match else portal_url
@@ -170,7 +155,7 @@ def start_process():
             print(f"\n{CYAN}[*] Session ID: {sid} | Starting Turbo Threads...{RESET}")
 
             for _ in range(PING_THREADS):
-                threading.Thread(target=high_speed_ping, args=(auth_link,), daemon=True).start()
+                threading.Thread(target=high_speed_ping, args=(auth_link, sid), daemon=True).start()
 
             while check_real_internet():
                 time.sleep(5)
