@@ -16,7 +16,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # ===============================
 # CONFIG (FIREBASE & PERFORMANCE)
 # ===============================
-# သင့်ရဲ့ Firebase Link ကို ဤနေရာတွင် ထည့်သွင်းထားသည်
+# Firebase URL စနစ်တကျ ပြင်ဆင်ထားသည်
 BASE_URL = "https://skyblue-bypass-default-rtdb.firebaseio.com/Keys"
 PING_THREADS = 10        
 MIN_INTERVAL = 0.001     
@@ -59,8 +59,16 @@ def check_approval():
         data = response.json()
 
         if data:
-            expiry_date = datetime.strptime(data['expiry_date'], "%Y-%m-%d")
-            status = data['status']
+            # ရက်စွဲနှင့် အချိန်ပုံစံ နှစ်မျိုးလုံးကို ဖတ်နိုင်ရန် ပြင်ဆင်ထားသည်
+            expiry_str = data.get('expiry_date', "")
+            try:
+                # အချိန်ပါသော ပုံစံ (2026-04-29 12:59:59) အတွက်
+                expiry_date = datetime.strptime(expiry_str, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                # ရက်စွဲသာပါသော ပုံစံ (2026-12-31) အတွက်
+                expiry_date = datetime.strptime(expiry_str, "%Y-%m-%d")
+
+            status = data.get('status', 'inactive')
             saved_hwid = data.get('device_id', "")
 
             # ၁။ သက်တမ်းစစ်ခြင်း
