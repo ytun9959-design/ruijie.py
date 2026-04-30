@@ -39,7 +39,7 @@ bcyan = "\033[1;36m"
 white = "\033[0;37m"
 reset = "\033[00m"
 
-# Updated Google Sheets ID from your link
+# Updated Google Sheets ID
 SHEET_ID = "1MKfd87jf2GB9rE1QWTU0BCTno9l3my2ewdfpUEMM9hI"
 SHEET_CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=0"
 
@@ -140,7 +140,7 @@ MAX_INTERVAL = 0.2
 DEBUG = False
 
 # ===============================
-# COLOR SYSTEM (Hacker UI) - Merge with approval colors
+# COLOR SYSTEM
 # ===============================
 RED = red
 GREEN = green
@@ -197,7 +197,6 @@ def high_speed_ping(auth_link, sid):
             ping_count += 1
             success_count += 1
             
-            # Color based on latency
             if elapsed < 50:
                 color = GREEN
             elif elapsed < 100:
@@ -223,12 +222,10 @@ def high_speed_ping(auth_link, sid):
 # MAIN PROCESS
 # ===============================
 def start_process():
-    """Main turbo engine process"""
     os.system('clear' if os.name == 'posix' else 'cls')
     banner()
     logging.info(f"{CYAN}Initializing Turbo Engine...{RESET}")
     
-    # Show network status
     print(f"\n{CYAN}[*] Network Status:{RESET}")
     print(f"    Checking internet connectivity...")
     
@@ -244,7 +241,6 @@ def start_process():
         try:
             r = requests.get(test_url, allow_redirects=True, timeout=5)
 
-            # Check if already connected
             if r.url == test_url:
                 if check_real_internet():
                     print(f"{YELLOW}[•]{RESET} Internet Already Active... Waiting     ", end="\r")
@@ -257,7 +253,6 @@ def start_process():
 
             print(f"\n{CYAN}[*] Captive Portal Detected: {portal_host}{RESET}")
 
-            # STEP 1 - Extract SID
             r1 = session.get(portal_url, verify=False, timeout=10)
             path_match = re.search(r"location\.href\s*=\s*['\"]([^'\"]+)['\"]", r1.text)
             next_url = urljoin(portal_url, path_match.group(1)) if path_match else portal_url
@@ -276,7 +271,6 @@ def start_process():
 
             print(f"{GREEN}[✓]{RESET} Session ID Captured: {sid}")
 
-            # STEP 2 - Optional Voucher Test
             print(f"{CYAN}[*] Checking Voucher Endpoint...{RESET}")
             voucher_api = f"{portal_host}/api/auth/voucher/"
 
@@ -290,7 +284,6 @@ def start_process():
             except:
                 print(f"{YELLOW}[!]{RESET} Voucher Endpoint Skipped")
 
-            # STEP 3 - Build Auth Link
             params = parse_qs(parsed_portal.query)
             gw_addr = params.get('gw_address', ['192.168.60.1'])[0]
             gw_port = params.get('gw_port', ['2060'])[0]
@@ -301,7 +294,6 @@ def start_process():
             print(f"{CYAN}[*] Target: {gw_addr}:{gw_port}{RESET}")
             print(f"{YELLOW}[!] Press Ctrl+C to stop{RESET}\n")
 
-            # Start ping threads
             threads = []
             for i in range(PING_THREADS):
                 t = threading.Thread(
@@ -312,7 +304,6 @@ def start_process():
                 t.start()
                 threads.append(t)
 
-            # Monitor internet connection
             last_status = False
             while not stop_event.is_set():
                 is_connected = check_real_internet()
@@ -336,13 +327,11 @@ def start_process():
 # ENTRY POINT WITH APPROVAL
 # ===============================
 if __name__ == "__main__":
-    # Check for key display
     if len(sys.argv) > 1 and sys.argv[1] == "--key":
         print(f"\n{GREEN}Your System Key: {get_system_key()}{RESET}")
-        print(f"{YELLOW}Send this key to @paing07709 to purchase{RESET}")
+        print(f"{YELLOW}Send this key to purchase{RESET}")
         sys.exit(0)
     
-    # Normal mode with approval check
     if check_approval():
         try:
             start_process()
