@@ -39,8 +39,8 @@ bcyan = "\033[1;36m"
 white = "\033[0;37m"
 reset = "\033[00m"
 
-# Google Sheets CSV URL
-SHEET_ID = "1hNMiw-VollSwwddM6By7mUs9pRgFCTCjGqyIa4eo9WM"
+# Updated Google Sheets ID from your link
+SHEET_ID = "1MKfd87jf2GB9rE1QWTU0BCTno9l3my2ewdfpUEMM9hI"
 SHEET_CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=0"
 
 # Local cache for offline approval
